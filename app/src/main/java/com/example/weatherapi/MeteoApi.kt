@@ -1,6 +1,5 @@
 package com.example.weatherapi
 
-import android.util.Log
 import com.google.gson.GsonBuilder
 import retrofit2.Call
 import retrofit2.Callback
@@ -8,11 +7,12 @@ import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
-
-class MeteoApi() {
+class MeteoApi(lat: Double, lng: Double) {
 
     private val BASE_URL = "https://api.open-meteo.com/v1/"
     private var apiService: APIService
+    private lateinit var weather: JsonMeteo
+
     init {
 
         val gson = GsonBuilder()
@@ -25,16 +25,18 @@ class MeteoApi() {
 
         apiService = retrofit.create(APIService::class.java)
 
+        setWeather(lat, lng)
     }
 
-    fun getWeather(data: List<Double>)
+    private fun setWeather(lat: Double, lng: Double)
     {
-       val result = apiService.getForecast(data[0],data[1])
+       val result = apiService.getForecast(lat,lng)
 
       result.enqueue(object : Callback<JsonMeteo?> {
             override fun onResponse(call: Call<JsonMeteo?>, response: Response<JsonMeteo?>) {
                 //Do something with response
-                println(response.body())
+                weather = response.body()!!
+
             }
 
             override fun onFailure(call: Call<JsonMeteo?>, t: Throwable) {
@@ -43,6 +45,13 @@ class MeteoApi() {
             }
         })
 
-
     }
+
+    fun getWeather(): JsonMeteo {
+        return weather
+    }
+
+
+
+
 }

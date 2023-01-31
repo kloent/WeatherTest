@@ -1,69 +1,127 @@
 package com.example.weatherapi
 
 
+import android.content.ContentValues.TAG
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.DatePicker
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.Observer
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import com.example.weatherapi.databinding.DateFragmentBinding
-import java.util.*
-
+import com.google.android.gms.common.api.Status
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationResult
+import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.api.model.TypeFilter
+import com.google.android.libraries.places.widget.AutocompleteSupportFragment
+import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
+import android.Manifest.permission
+import android.app.appsearch.observer.ObserverCallback
 
 class DateFragment : Fragment() {
 
-
     companion object {
-        fun newInstance() = DateFragment()
+        //fun newInstance() = DateFragment()
     }
+
+
     private lateinit var binding: DateFragmentBinding
     private lateinit var viewModel: DateViewModel
+    private lateinit var geo: Geo
+    private lateinit var geoCode: GeoCode
+    private lateinit var city: City
+    private lateinit var meteoApi: MeteoApi
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View? {
+
         binding = DataBindingUtil.inflate(
             inflater,
             R.layout.date_fragment,
             container,
             false
         )
-        val geo = Geo(context!!)
-        val meteo = MeteoApi()
 
-        Log.i("GeoLogAndLate", geo.getWeatherForCurrentLocation().toString())
-        binding.Geo.setOnClickListener { meteo.getWeather(geo.currentLoc)  }
         viewModel = ViewModelProvider(this)[DateViewModel::class.java]
-        val today = Calendar.getInstance()
         binding.dateViewModel = viewModel
         binding.lifecycleOwner = this
 
-        binding.firstDay.init(today.get(Calendar.YEAR),today.get(Calendar.MONTH),today.get(Calendar.DAY_OF_MONTH)
-        ) { view, year, monthOfYear, dayOfMonth ->
-            viewModel.changeDate()
-        }
-        binding.secondDay.init(today.get(Calendar.YEAR),today.get(Calendar.MONTH),today.get(Calendar.DAY_OF_MONTH)
-        ) { view, year, monthOfYear, dayOfMonth ->
-            viewModel.changeDate()
+        city = City()
+
+        if(!geo.locationTracking){
+            city.setLat(geo.getLocation().latitude)
+            city.setLng(geo.getLocation().longitude)
+
+            geoCode = GeoCode(requireContext(), city.getLat(), city.getLng())
+            city.setName(geoCode.getAddress())
+
+            meteoApi = MeteoApi(city.getLat(), city.getLng())
+
+            city.setWeather(meteoApi.getWeather())
         }
 
-        //binding.firstDay.init(today.get(Calendar.YEAR),today.get(Calendar.MONTH),today.get(Calendar.DAY_OF_MONTH))
+        autocomplete()
 
-        //return inflater.inflate(R.layout.date_fragment, container, false)
+        //test Button
+        binding.Geo.setOnClickListener {
+            city.getWeather()
+        }
         return binding.root
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        val perm = Permissions(requireContext(), requireActivity())
+
+        perm.setupPermissions(arrayOf(
+            permission.ACCESS_COARSE_LOCATION,
+            permission.ACCESS_FINE_LOCATION
+        ))
+
+        geo = Geo(requireContext())
+
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
 
-
         // TODO: Use the ViewModel
+    }
+
+    fun autocomplete(){
+
+        // Initialize the SDK
+        Places.initialize(requireContext(),  getString(R.string.apiKey) )
+
+        // Initialize the AutocompleteSupportFragment.
+        val autocompleteFragment =  childFragmentManager.findFragmentById(R.id.autocomplete_fragment)
+                    as AutocompleteSupportFragment
+
+        // Specify the types of place data to return.
+        autocompleteFragment.setPlaceFields(listOf(Place.Field.NAME, Place.Field.LAT_LNG)).setTypeFilter(TypeFilter.CITIES)
+
+        // Set up a PlaceSelectionListener to handle the response.
+        autocompleteFragment.setOnPlaceSelectedListener(object : PlaceSelectionListener {
+            override fun onPlaceSelected(place: Place) {
+                // TODO: Get info about the selected place.
+                println( place.latLng)
+                Log.i(TAG, "Place: ${place.name}")
+                city.setLat(place.latLng!!.latitude)
+                city.setLng(place.latLng!!.longitude)
+            }
+
+            override fun onError(status: Status) {
+                // TODO: Handle the error.
+                Log.i(TAG, "An error occurred: $status")
+            }
+        })
     }
 
 }
