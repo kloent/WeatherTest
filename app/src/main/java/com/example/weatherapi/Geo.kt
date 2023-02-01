@@ -7,6 +7,7 @@ import android.location.Location
 import android.os.Looper
 import android.util.Log
 import androidx.core.app.ActivityCompat
+import androidx.lifecycle.OnLifecycleEvent
 import com.google.android.gms.location.*
 import com.google.android.gms.tasks.CancellationToken
 import com.google.android.gms.tasks.CancellationTokenSource
@@ -21,10 +22,6 @@ class Geo(private val context: Context){
     private var locationRequest: LocationRequest = createLocationRequest()
     private lateinit var location: Location
     var locationTracking: Boolean = false
-
-    init{
-        startLocationUpdates()
-    }
 
     private fun setCurrentLocation() {
 
@@ -88,7 +85,7 @@ class Geo(private val context: Context){
 
     }
 
-    private fun startLocationUpdates(locationRequest: LocationRequest = this.locationRequest, locationCallback: LocationCallback = this.locationCallback) {
+    fun startLocationUpdates(locationRequest: LocationRequest = this.locationRequest, locationCallback: LocationCallback = this.locationCallback) {
         if (ActivityCompat.checkSelfPermission(context,
                 Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
                 context,
@@ -101,7 +98,7 @@ class Geo(private val context: Context){
             //                                          int[] grantResults)
             // to handle the case where the user grants the permission. See the documentation
             // for ActivityCompat#requestPermissions for more details.
-
+            println("Geo Error")
         }else
         {
             println("startLocUpdate")
@@ -134,6 +131,10 @@ class Geo(private val context: Context){
 
     fun getLocation(): Location {
         return this.location
+    }
+
+    fun stopLocationUpdates(locationCallback: LocationCallback = this.locationCallback){
+        this.fusedLocationClient.removeLocationUpdates(locationCallback)
     }
 }
 

@@ -7,7 +7,7 @@ import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
-class MeteoApi(lat: Double, lng: Double) {
+class MeteoApi() {
 
     private val BASE_URL = "https://api.open-meteo.com/v1/"
     private var apiService: APIService
@@ -25,10 +25,9 @@ class MeteoApi(lat: Double, lng: Double) {
 
         apiService = retrofit.create(APIService::class.java)
 
-        setWeather(lat, lng)
     }
 
-    private fun setWeather(lat: Double, lng: Double)
+    fun setWeather(lat: Double, lng: Double)
     {
        val result = apiService.getForecast(lat,lng)
 

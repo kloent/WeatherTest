@@ -7,6 +7,7 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.awaitAll
 
 class Permissions(private val context: Context , private val activity: Activity) : AppCompatActivity() {
 
@@ -21,7 +22,7 @@ class Permissions(private val context: Context , private val activity: Activity)
                 str)
 
             if (permission != PackageManager.PERMISSION_GRANTED) {
-                Log.i(TAG, "Permission to record denied")
+                Log.i(TAG, "Permission to record denied: $str")
                 makeRequest(perms)
             }
         }
@@ -31,6 +32,7 @@ class Permissions(private val context: Context , private val activity: Activity)
         ActivityCompat.requestPermissions(activity,
             perms,
             RECORD_REQUEST_CODE)
+        return
     }
     override fun onRequestPermissionsResult(requestCode: Int,
                                              permissions: Array<String>, grantResults: IntArray) {

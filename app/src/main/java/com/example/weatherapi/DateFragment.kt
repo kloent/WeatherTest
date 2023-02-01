@@ -22,13 +22,14 @@ import com.google.android.libraries.places.widget.AutocompleteSupportFragment
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
 import android.Manifest.permission
 import android.app.appsearch.observer.ObserverCallback
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.Observer
 
 class DateFragment : Fragment() {
 
     companion object {
         //fun newInstance() = DateFragment()
     }
-
 
     private lateinit var binding: DateFragmentBinding
     private lateinit var viewModel: DateViewModel
@@ -54,39 +55,64 @@ class DateFragment : Fragment() {
         binding.lifecycleOwner = this
 
         city = City()
+        geoCode = GeoCode(requireContext())
+        meteoApi = MeteoApi()
 
-        if(!geo.locationTracking){
-            city.setLat(geo.getLocation().latitude)
-            city.setLng(geo.getLocation().longitude)
 
-            geoCode = GeoCode(requireContext(), city.getLat(), city.getLng())
-            city.setName(geoCode.getAddress())
 
-            meteoApi = MeteoApi(city.getLat(), city.getLng())
+        city.weather.observe(this, Observer { weather ->
+            city.setWeather(weather)
+        })
 
-            city.setWeather(meteoApi.getWeather())
-        }
+        city.location.observe(this, Observer{location ->
+
+            city.setName(geoCode.defineAddresses(location.latitude, location.longitude))
+            meteoApi.setWeather(location.latitude,location.longitude)
+
+        })
+
+        city.name.observe(this,Observer{name ->
+
+            binding.cityName.text = name
+
+        })
 
         autocomplete()
 
         //test Button
         binding.Geo.setOnClickListener {
-            city.getWeather()
+
         }
+
         return binding.root
+    }
+
+    override fun onPause() {
+        super.onPause()
+        println("StopLocUpd")
+        geo.stopLocationUpdates()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val perm = Permissions(requireContext(), requireActivity())
 
-        perm.setupPermissions(arrayOf(
+        let {
+            perm.setupPermissions(arrayOf(
             permission.ACCESS_COARSE_LOCATION,
-            permission.ACCESS_FINE_LOCATION
-        ))
+            permission.ACCESS_FINE_LOCATION,
+            permission.WRITE_EXTERNAL_STORAGE,
+            permission.READ_EXTERNAL_STORAGE
+        )) }
 
         geo = Geo(requireContext())
 
+        geo.startLocationUpdates()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        geo.startLocationUpdates()
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -95,7 +121,7 @@ class DateFragment : Fragment() {
         // TODO: Use the ViewModel
     }
 
-    fun autocomplete(){
+    private fun autocomplete(){
 
         // Initialize the SDK
         Places.initialize(requireContext(),  getString(R.string.apiKey) )
@@ -111,10 +137,13 @@ class DateFragment : Fragment() {
         autocompleteFragment.setOnPlaceSelectedListener(object : PlaceSelectionListener {
             override fun onPlaceSelected(place: Place) {
                 // TODO: Get info about the selected place.
-                println( place.latLng)
+
                 Log.i(TAG, "Place: ${place.name}")
-                city.setLat(place.latLng!!.latitude)
-                city.setLng(place.latLng!!.longitude)
+
+                city.setLocation(place.latLng!!.latitude, place.latLng!!.longitude)
+
+                city.setName(place.name!!.toString())
+
             }
 
             override fun onError(status: Status) {

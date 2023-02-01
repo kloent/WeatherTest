@@ -1,42 +1,43 @@
 package com.example.weatherapi
 
-open class City() {
-    private var name: String = ""
-    private var lat: Double = 0.0
-    private var lng: Double = 0.0
-    private var weather = JsonMeteo()
+import android.location.Location
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 
-    fun setName(name: String){
-        this.name = name
+open class City {
+
+    private val _name = MutableLiveData<String>()
+    val name: LiveData<String>
+        get() = _name
+
+    private val _location = MutableLiveData<Location>()
+    val location: LiveData<Location>
+        get() = _location
+
+    private val _weather = MutableLiveData<JsonMeteo>()
+    val weather: LiveData<JsonMeteo>
+    get() =_weather
+
+    fun setName(city: String) {
+        _name.value = city
     }
 
-    fun getName(): String {
-        return this.name
+    fun setLocation(lat: Double, lng: Double){
+
+        val loc: Location = Location("loc")
+
+        loc.latitude = lat
+        loc.longitude = lng
+
+        _location.value = loc
     }
 
-    fun setLat(lat: Double){
-        this.lat = lat
-    }
-
-    fun getLat(): Double {
-        return this.lat
-    }
-
-    fun setLng(lng:Double){
-        this.lng = lng
-    }
-
-    fun getLng(): Double {
-        return this.lng
-    }
     fun setWeather(body: JsonMeteo?) {
         if (body != null) {
-            this.weather = body
+            _weather.value = body
         }
     }
-    fun getWeather(): JsonMeteo {
-        return this.weather
-    }
+
 
 
 

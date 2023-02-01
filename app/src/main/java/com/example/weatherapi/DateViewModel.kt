@@ -17,11 +17,13 @@ class DateViewModel : ViewModel() {
 
     private val _city = MutableLiveData<String>()
     val city: LiveData<String>
-    get() = _city
+        get() = _city
 
-    fun changeDate(){
+    fun changeDate( ){
         Log.i("Change","changeDate")
     }
-
+    fun changeCity(name: String){
+        _city.value = name
+    }
 
 }
