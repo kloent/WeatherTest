@@ -58,19 +58,16 @@ class DateFragment : Fragment() {
         geoCode = GeoCode(requireContext())
         meteoApi = MeteoApi()
 
-
-
-        city.weather.observe(this, Observer { weather ->
-            city.setWeather(weather)
-        })
-
+        // When change location set Name and Weather for City
         city.location.observe(this, Observer{location ->
 
             city.setName(geoCode.defineAddresses(location.latitude, location.longitude))
             meteoApi.setWeather(location.latitude,location.longitude)
+            city.setWeather(meteoApi.getWeather())
 
         })
 
+        //Observe when change name in City, change name in layout
         city.name.observe(this,Observer{name ->
 
             binding.cityName.text = name
@@ -96,7 +93,7 @@ class DateFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val perm = Permissions(requireContext(), requireActivity())
-
+        //check permissions
         let {
             perm.setupPermissions(arrayOf(
             permission.ACCESS_COARSE_LOCATION,
@@ -106,7 +103,7 @@ class DateFragment : Fragment() {
         )) }
 
         geo = Geo(requireContext())
-
+        // start check of changing location
         geo.startLocationUpdates()
     }
 
